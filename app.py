@@ -45,7 +45,6 @@ def saveimage(arr, output=None):
 
 
 
-
 def doBrightness(params):
     dic_param = dict()
     for param in params:
@@ -63,7 +62,95 @@ def doBrightness(params):
 
     saveimage(imag, dic_param['output'])
 
+# G1
+def hflip(img):
+    # we first get the image dimmensions
+    width, height = img.size
+    # we get the pixels
+    pixels = img.load()
+    # we create a new image to save the result of the gorizontal flip
+    new = Image.new(img.mode, (width, height))
+    # -> im.mode to conserve the type of pixels of the original image, for example RGB
+    # and we get the access to the new image's pixels
+    pixels_new =  new.load()
+    # change positions
+    for y in range(height):
+        for x in range(width):
+            pixels_new[width - 1 - x, y] = pixels[x, y] 
+    return new
 
+# G2
+def vflip(img):
+    # we first get the image dimmensions
+    width, height = img.size
+    # we get the pixels
+    pixels = img.load()
+    # we create a new image to save the result of the gorizontal flip
+    new = Image.new(img.mode, (width, height))
+    # -> im.mode to conserve the type of pixels of the original image, for example RGB
+    # and we get the access to the new image's pixels
+    pixels_new =  new.load()
+    # change positions
+    for y in range(height):
+        for x in range(width):
+            pixels_new[x, height-1-y] = pixels[x, y] 
+    return new
+
+
+# G3
+def dflip(img):
+    # we first get the image dimmensions
+    width, height = img.size
+    # we get the pixels
+    pixels = img.load()
+    # we create a new image to save the result of the gorizontal flip
+    new = Image.new(img.mode, (width, height))
+    # -> im.mode to conserve the type of pixels of the original image, for example RGB
+    # and we get the access to the new image's pixels
+    pixels_new =  new.load()
+    # change positions
+    for y in range(height):
+        for x in range(width):
+            pixels_new[y, x] = pixels[x, y] 
+    return new
+
+
+
+# G4
+def shrink(img):
+    # we first get the image dimmensions
+    width, height = img.size
+    new_width = width//2
+    new_height = height//2
+    # we get the pixels
+    pixels = img.load()
+    # we create a new image to save the result
+    new = Image.new(img.mode, (new_width, new_height))
+    pixels_new = new.load()
+    for y in range(new_height):
+        for x in range(new_width):
+            pixels_new[x, y] = pixels[2*x, 2*y]
+    return new
+
+
+#G5
+def enlarge(img):
+    # we first get the image dimmensions
+    width, height = img.size
+    new_width = width*2
+    new_height = height*2
+    # we get the pixels
+    pixels = img.load()
+    # we create a new image to save the result
+    new = Image.new(img.mode, (new_width, new_height))
+    pixels_new = new.load()
+    for y in range(new_height):
+        for x in range(new_width):
+            pixels_new[x, y] = pixels[x//2, y//2]
+    return new
+
+
+# N1
 
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
@@ -79,4 +166,6 @@ param = sys.argv[2:]
 
 if command == '--brightness':
     doBrightness(param)
+
+
 
