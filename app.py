@@ -1,6 +1,5 @@
 # ----- Libraries -----
 
-
 from PIL import Image
 import sys
 import numpy as np
@@ -8,8 +7,6 @@ from datetime import datetime
 
 
 # ------
-
-
 
 
 # ----- Code ------
@@ -20,14 +17,33 @@ from datetime import datetime
 
 def readimage(path):
     im = Image.open(path)
-
-
+    
+    if im.mode != 'RGB' and im.mode != 'L':
+        im = im.convert('RGB')
+        
     arr = np.array(im.getdata())
-    if arr.ndim == 1: #grayscale
+    # .getdata() devuelve los datos como una larga tira de pixeles sin 
+    # organizar en filas y columnas.
+    # Si es en color, arr = [ (255, 0, 0), (100, 150, 200), ... ]
+    # Si es en blanco y negro, arr = [ 0, 1, 4, 2, 132, ...]
+    
+    if arr.ndim == 1: 
+        # si cada posicion del array tiene un solo valor, es en escala de grises
+        # ese valor es un entero de 8 bits que representa un valor entre 0-255
+        # osea que cada posicion del array guarda un nº entre 0-255, siendo 0 negro y 255 blanco
         numColorChannels = 1
         arr = arr.reshape(im.size[1], im.size[0])
+        # im.size[0] es el ancho, nº columnas
+        # im.size[1] es el alto, nº filas
+        # como la imagen es una cuadrícula y no una fila larga,
+        # hacemos reshape para recortar y ordenar en forma de tabla
+    
     else:
         numColorChannels = arr.shape[1]
+
+        # en una imágen a color, cada píxel tiene 3 números, por eso
+        # la tira plana debe convertirse en una tabla de 3 dimensiones.
+        # En un cubo: alto, ancho y los 3 canales de color.
         arr = arr.reshape(im.size[1], im.size[0], numColorChannels)
 
     return arr
@@ -40,117 +56,196 @@ def saveimage(arr, output=None):
     if output:
         newIm.save(output)
     else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # to avoid using : on names, because on Windows is 
+        # prohibited.
+        default_name = f"result-{timestamp}.bmp"
+        newIm.save(default_name)
 
-        newIm.save(f"result-{datetime.now()}.bmp")
 
-
-
-def doBrightness(params):
+def parse_params(params):
     dic_param = dict()
     for param in params:
         values = param.strip('-').split('=')
         dic_param[values[0]] = values[1]
+    return dic_param
+
+
+# ------- Elementary operations ----------
+
+
+#(B1) Image brightness modification (--brightness)
+
+def doBrightness(params):
+    dic_param = parse_params(params)
 
     imag = readimage(dic_param['input'])
 
     constant = int(dic_param['value'])
+    # es cuánto vamos a subir/bajar el brillo de todos los píxeles
+    # a la vez
 
     if constant <= 0:
         imag = np.maximum(0, imag + constant)
+        # * como nungun pixel puede bajar de 0, si el cálculo da p.e
+        # -10, pues el maximo será 0
+        # * al hacer img+constant, se le suma constant a cada elemento
+        # de la matriz (a cada pixel)
     else:
         imag = np.minimum(255, imag + constant)
 
     saveimage(imag, dic_param['output'])
 
-# G1
-def hflip(img):
-    # we first get the image dimmensions
-    width, height = img.size
-    # we get the pixels
-    pixels = img.load()
-    # we create a new image to save the result of the gorizontal flip
-    new = Image.new(img.mode, (width, height))
-    # -> im.mode to conserve the type of pixels of the original image, for example RGB
-    # and we get the access to the new image's pixels
-    pixels_new =  new.load()
-    # change positions
-    for y in range(height):
-        for x in range(width):
-            pixels_new[width - 1 - x, y] = pixels[x, y] 
-    return new
 
-# G2
-def vflip(img):
-    # we first get the image dimmensions
-    width, height = img.size
-    # we get the pixels
-    pixels = img.load()
-    # we create a new image to save the result of the gorizontal flip
-    new = Image.new(img.mode, (width, height))
-    # -> im.mode to conserve the type of pixels of the original image, for example RGB
-    # and we get the access to the new image's pixels
-    pixels_new =  new.load()
-    # change positions
-    for y in range(height):
-        for x in range(width):
-            pixels_new[x, height-1-y] = pixels[x, y] 
-    return new
+# (B2) Image contrast modification (--contrast)
+def doContrast(params):
+    # lineal version
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    alpha = float(dic_param['value'])
+    center = 128
+    result = np.minimum(255, np.maximum(0, center + alpha * (imag - center)))
+    result = result.astype(np.uint8)
+    saveimage(result, dic_param['output'])
 
 
-# G3
-def dflip(img):
-    # we first get the image dimmensions
-    width, height = img.size
-    # we get the pixels
-    pixels = img.load()
-    # we create a new image to save the result of the gorizontal flip
-    new = Image.new(img.mode, (width, height))
-    # -> im.mode to conserve the type of pixels of the original image, for example RGB
-    # and we get the access to the new image's pixels
-    pixels_new =  new.load()
-    # change positions
-    for y in range(height):
-        for x in range(width):
-            pixels_new[y, x] = pixels[x, y] 
-    return new
+# (B3) Negative (--negative)
+def doNegative(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    result = 255 - imag
+    saveimage(result, dic_param['output'])
+    
+
+
+# ------- Geometric transforms ----------
+   
+# (G1) Horizontal flip (--hflip)    
+def doHorFlip(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+
+    zeros = np.zeros_like(imag)
+
+    height = zeros.shape[0]
+    width = zeros.shape[1]
+
+    for x in range(height):
+        for  y in range(width):
+            zeros[x, width - y - 1] = imag[x,y]
+ 
+    saveimage(zeros, dic_param['output'])
+    
+    # numpy version
+    #dic_param = parse_params(params)
+    #imag = readimage(dic_param['input'])
+    # result = imag[:, ::-1]
+    # saveimage(result, dic_param['output'])
+
+
+# (G2) Vertical flip (--vflip)
+def doVerFlip(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    zeros = np.zeros_like(imag)
+    i = 0
+    j = 0
+    k = imag.shape[0] - 1 
+    while k >=  0:
+        while j <= imag.shape[1] - 1:
+            zeros[i][j] = imag[k][j]
+            j+=1
+        j = 0
+        i+=1
+        k -= 1
+    saveimage(zeros, dic_param['output'])
+    
+    # versión como la anterior:
+    #zeros = np.zeros_like(imag)
+    #height = zeros.shape[0]
+    #width = zeros.shape[1]
+    # for x in range(height):
+        #for y in range(width):
+            #zeros[height - 1 - x, y] = imag[x, y]
+    
+    # version numpy
+    # result = imag[::-1]
+
+
+# (G3) Diagonal flip (--dflip)
+def doDiagonalFlip(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    zeros = np.zeros_like(imag)
+    i = 0
+    k = imag.shape[0] - 1
+    while k >= 0:
+        j = imag.shape[1] - 1
+        l = 0
+        while j >= 0:
+            zeros[i][l] = imag[k][j]
+            j -= 1
+            l += 1
+        i += 1
+        k -= 1
+
+    saveimage(zeros, dic_param['output'])
+    
+    #  Numpy version: result = imag[::-1, ::-1]
+
+
+# (G4) Image shrinking (--shrink)
+def doShrink(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    factor = int(dic_param['value'])
+    height = imag.shape[0]
+    width = imag.shape[1]
+    new_height = height // factor
+    new_width = width // factor
+    
+    if imag.ndim == 3:  # Si es a color
+        channels = imag.shape[2]
+        zeros = np.zeros((new_height, new_width, channels), dtype=imag.dtype)
+    else:  # Si es blanco y negro 
+        zeros = np.zeros((new_height, new_width), dtype=imag.dtype)
+           
+    for i in range(new_height):
+        for j in range(new_width):
+            x = i * factor
+            y = j * factor
+            zeros[i,j] = imag[x,y]
+    saveimage(zeros, dic_param['output'])
+       
+    
+
+# (G5) Image enlargement (--enlarge)
+def doEnlargement(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    
+    factor = int(dic_param['value'])
+    height = imag.shape[0]
+    width = imag.shape[1]
+    new_height = height*factor
+    new_width = width*factor
+    
+    if imag.ndim == 3:  # Si es a color
+        channels = imag.shape[2]
+        zeros = np.zeros((new_height, new_width, channels), dtype=imag.dtype)
+    else:  # Si es blanco y negro 
+        zeros = np.zeros((new_height, new_width), dtype=imag.dtype)
+         
+    for i in range(new_height):
+        for j in range(new_width):
+            orig_i = i // factor
+            orig_j = j // factor
+            zeros[i, j] = imag[orig_i, orig_j]
+            
+    saveimage(zeros, dic_param['output'])
 
 
 
-# G4
-def shrink(img):
-    # we first get the image dimmensions
-    width, height = img.size
-    new_width = width//2
-    new_height = height//2
-    # we get the pixels
-    pixels = img.load()
-    # we create a new image to save the result
-    new = Image.new(img.mode, (new_width, new_height))
-    pixels_new = new.load()
-    for y in range(new_height):
-        for x in range(new_width):
-            pixels_new[x, y] = pixels[2*x, 2*y]
-    return new
-
-
-#G5
-def enlarge(img):
-    # we first get the image dimmensions
-    width, height = img.size
-    new_width = width*2
-    new_height = height*2
-    # we get the pixels
-    pixels = img.load()
-    # we create a new image to save the result
-    new = Image.new(img.mode, (new_width, new_height))
-    pixels_new = new.load()
-    for y in range(new_height):
-        for x in range(new_width):
-            pixels_new[x, y] = pixels[x//2, y//2]
-    return new
-
-
-# N1
 
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
@@ -166,6 +261,27 @@ param = sys.argv[2:]
 
 if command == '--brightness':
     doBrightness(param)
+
+elif command == '--hflip':
+    doHorFlip(param)
+
+elif command == '--vflip':
+    doVerFlip(param)
+
+elif command == '--dflip':
+    doDiagonalFlip(param)
+
+elif command == '--contrast':
+    doContrast(param)
+
+elif command == '--negative':
+    doNegative(param)
+
+elif command == '--shrink':
+    doShrink(param)
+
+elif command == '--enlarge':
+    doEnlargement(param)
 
 
 
