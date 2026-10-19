@@ -18,9 +18,9 @@ from datetime import datetime
 def readimage(path):
     im = Image.open(path)
     
-    if im.mode != 'RGB' and im.mode != 'L':
-        im = im.convert('RGB')
-        
+    
+
+    
     arr = np.array(im.getdata())
     # .getdata() devuelve los datos como una larga tira de pixeles sin 
     # organizar en filas y columnas.
@@ -246,6 +246,23 @@ def doEnlargement(params):
 
 
 
+def doAMF(params):
+    dic_param = parse_params(params)
+
+
+    imag = readimage(dic_param['input'])
+
+    m = int(dic_param['m'])
+    n = int(dic_param['n'])
+
+    j = imag.shape[0]
+    k = imag.shape[1]
+
+
+
+
+
+
 
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
@@ -258,6 +275,11 @@ if len(sys.argv) == 2:
 command = sys.argv[1]
 param = sys.argv[2:]
 # .....
+
+
+
+
+
 
 if command == '--brightness':
     doBrightness(param)
