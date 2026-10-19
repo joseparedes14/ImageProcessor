@@ -103,7 +103,7 @@ def doContrast(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     alpha = float(dic_param['value'])
-    center = 128
+    center = 127
     result = np.minimum(255, np.maximum(0, center + alpha * (imag - center)))
     result = result.astype(np.uint8)
     saveimage(result, dic_param['output'])
@@ -124,6 +124,12 @@ def doNegative(params):
 def doHorFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
+    result = imag[:, ::-1]
+    saveimage(result, dic_param['output'])
+    
+    '''
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
 
     zeros = np.zeros_like(imag)
 
@@ -135,18 +141,17 @@ def doHorFlip(params):
             zeros[x, width - y - 1] = imag[x,y]
  
     saveimage(zeros, dic_param['output'])
-    
-    # numpy version
-    #dic_param = parse_params(params)
-    #imag = readimage(dic_param['input'])
-    # result = imag[:, ::-1]
-    # saveimage(result, dic_param['output'])
+    '''
 
 
 # (G2) Vertical flip (--vflip)
 def doVerFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
+    result = imag[::-1]
+    saveimage(result, dic_param['output'])
+    
+    '''
     zeros = np.zeros_like(imag)
     i = 0
     j = 0
@@ -159,23 +164,16 @@ def doVerFlip(params):
         i+=1
         k -= 1
     saveimage(zeros, dic_param['output'])
-    
-    # versión como la anterior:
-    #zeros = np.zeros_like(imag)
-    #height = zeros.shape[0]
-    #width = zeros.shape[1]
-    # for x in range(height):
-        #for y in range(width):
-            #zeros[height - 1 - x, y] = imag[x, y]
-    
-    # version numpy
-    # result = imag[::-1]
+    '''
 
 
 # (G3) Diagonal flip (--dflip)
 def doDiagonalFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
+    result = imag[::-1, ::-1]
+    saveimage(result, dic_param['output'])
+    '''
     zeros = np.zeros_like(imag)
     i = 0
     k = imag.shape[0] - 1
@@ -188,10 +186,7 @@ def doDiagonalFlip(params):
             l += 1
         i += 1
         k -= 1
-
-    saveimage(zeros, dic_param['output'])
-    
-    #  Numpy version: result = imag[::-1, ::-1]
+    '''
 
 
 # (G4) Image shrinking (--shrink)
@@ -259,7 +254,39 @@ def doAMF(params):
     k = imag.shape[1]
 
 
-
+def doMidpoint(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
+    # Obtenemos m y n de los parámetros (por defecto 3x3 si no se indican)
+    m = int(dic_param.get('m', 3))
+    n = int(dic_param.get('n', 3))
+    imag_new = np.copy(imag)
+    height = imag.shape[0]
+    width = imag.shape[1]
+    # Calculamos el radio o margen a ignorar en los bordes según el tamaño de la ventana
+    offset_m = m // 2
+    offset_n = n // 2
+    # Manejamos si la imagen es a color (3D) o en escala de grises (2D)
+    if imag.ndim == 3:
+        for x in range(offset_m, height - offset_m):
+            for y in range(offset_n, width - offset_n):
+                # Ventana dinámica de m x n centrada en (x, y)
+                window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1, :]
+                vmin = np.min(window, axis=(0, 1))
+                vmax = np.max(window, axis=(0, 1))
+                imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2
+    else:
+        for x in range(offset_m, height - offset_m):
+            for y in range(offset_n, width - offset_n):
+                # Ventana dinámica de m x n centrada en (x, y)
+                window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1]
+                vmin = np.min(window)
+                vmax = np.max(window)
+                imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2
+                
+    imag_new = imag_new.astype(np.uint8)
+    saveimage(imag_new, dic_param['output'])
+    
 
 
 
