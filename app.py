@@ -288,6 +288,39 @@ def doMidpoint(params):
     saveimage(imag_new, dic_param['output'])
     
 
+# ------- Geometric transforms ----------
+
+# (E1) Mean square error (--mse)
+def doMSE(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    img_res = readimage(dic_param['compared'])
+    
+    img1_f = img.astype(np.float32)
+    img2_f = img_res.astype(np.float32)
+    mse_value = np.mean((img1_f - img2_f) ** 2)
+    print(f"MSE is: {mse_value:.4f}")
+    
+def doPMSE(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    img_res = readimage(dic_param['compared'])
+    img1_f = img.astype(np.float32)
+    img2_f = img_res.astype(np.float32)
+    mse_value = np.mean((img1_f - img2_f) ** 2)
+    if mse_value == 0:
+        pmse_value = 0.0
+    else:
+        pmse_value = mse_value / (255 ** 2)
+    print(f"PMSE is: {pmse_value:.4f}")
+        
+        
+        
+    
+        
+    
+    
+
 
 
 
@@ -332,5 +365,10 @@ elif command == '--shrink':
 elif command == '--enlarge':
     doEnlargement(param)
 
+elif command == '--mse':
+    doMSE(param)
 
+elif command == '--pmse':
+    doPMSE(param)
+    
 
