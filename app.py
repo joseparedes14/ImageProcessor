@@ -6,7 +6,238 @@ import numpy as np
 from datetime import datetime
 
 
-# ------
+# ------ 
+
+
+# ---- HELP ----
+
+def show_help():
+    print("""
+IMAGE PROCESSOR - HELP
+======================
+
+Usage:
+    python app.py --command -parameter=value ...
+
+All image paths must point to valid image files.
+For image processing operations, -input and -output are required.
+
+--------------------------------------------------
+BASIC IMAGE OPERATIONS
+--------------------------------------------------
+
+1. --brightness
+   Modifies the brightness of an image by adding a constant
+   value to every pixel.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+       -value=INTEGER    Brightness adjustment.
+
+   Values:
+       Positive values make the image brighter.
+       Negative values make the image darker.
+       Zero leaves the image unchanged.
+       Pixel values are clipped to the range [0, 255].
+
+   Example:
+       python app.py --brightness -input=images_input/lena.bmp -output=images_output/bright.bmp -value=30
+
+
+2. --contrast
+   Modifies image contrast using a linear transformation
+   around the intensity value 127.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+       -value=NUMBER     Contrast factor (alpha).
+
+   Values:
+       alpha > 1 increases contrast.
+       0 < alpha < 1 decreases contrast.
+       alpha = 1 preserves the original contrast.
+       alpha = 0 produces a uniform mid-gray image.
+       Negative values invert intensity differences around 127.
+
+   Example:
+       python app.py --contrast -input=images_input/lena.bmp -output=images_output/contrast.bmp -value=1.5
+
+
+3. --negative
+   Creates the negative of an image by subtracting each
+   pixel value from 255.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+
+   Example:
+       python app.py --negative -input=images_input/lena.bmp -output=images_output/negative.bmp
+
+
+--------------------------------------------------
+GEOMETRIC TRANSFORMATIONS
+--------------------------------------------------
+
+4. --hflip
+   Flips an image horizontally, reversing the order of
+   its columns (left to right).
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+
+   Example:
+       python app.py --hflip -input=images_input/lena.bmp -output=images_output/hflip.bmp
+
+
+5. --vflip
+   Flips an image vertically, reversing the order of
+   its rows (top to bottom).
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+
+   Example:
+       python app.py --vflip -input=images_input/lena.bmp -output=images_output/vflip.bmp
+
+
+6. --dflip
+   Reverses both the rows and columns of an image,
+   producing a 180-degree rotation.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+
+   Example:
+       python app.py --dflip -input=images_input/lena.bmp -output=images_output/dflip.bmp
+
+
+7. --shrink
+   Reduces the image dimensions by an integer factor.
+   It keeps one pixel from each factor-by-factor region,
+   specifically the pixel at the top-left position.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+       -value=INTEGER    Shrinking factor (greater than zero).
+
+   Example:
+       python app.py --shrink -input=images_input/lena.bmp -output=images_output/small.bmp -value=2
+
+
+8. --enlarge
+   Enlarges an image by an integer factor using nearest-neighbor
+   replication. Each original pixel is repeated horizontally
+   and vertically.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the processed image.
+       -value=INTEGER    Enlargement factor (greater than zero).
+
+   Example:
+       python app.py --enlarge -input=images_input/lena.bmp -output=images_output/large.bmp -value=2
+
+
+--------------------------------------------------
+SPATIAL FILTERS
+--------------------------------------------------
+
+9. --amean
+   Applies an arithmetic mean filter to reduce local variations
+   and smooth the image. Each pixel is replaced by the mean
+   of the pixel values within its local window.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+       -output=PATH      Path to save the filtered image.
+
+   Optional parameters:
+       -m=INTEGER        Window height (default: 3).
+       -n=INTEGER        Window width (default: 3).
+
+   Note:
+       The default window size is 3x3.
+       Border pixels outside the processed region remain unchanged.
+
+   Example:
+       python app.py --amean -input=images_input/lena.bmp -output=images_output/amean.bmp -m=3 -n=3
+
+
+--------------------------------------------------
+IMAGE QUALITY METRICS
+--------------------------------------------------
+
+10. --mse
+    Calculates the Mean Squared Error between two images.
+
+    Required parameters:
+        -input=PATH      Path to the original image.
+        -compared=PATH   Path to the image being compared.
+
+    Output:
+        Prints the MSE value to the terminal.
+        Lower values indicate smaller average squared differences.
+        An MSE of 0 means the images are identical.
+
+    Example:
+        python app.py --mse -input=images_input/lena.bmp -compared=images_output/negative.bmp
+
+
+11. --pmse
+    Calculates the Peak-normalized Mean Squared Error by
+    dividing the MSE by 255 squared.
+
+    Required parameters:
+        -input=PATH      Path to the original image.
+        -compared=PATH   Path to the image being compared.
+
+    Output:
+        Prints the PMSE value to the terminal.
+        A value of 0 means the images are identical.
+
+    Example:
+        python app.py --pmse -input=images_input/lena.bmp -compared=images_output/negative.bmp
+
+
+12. --md
+    Calculates the Maximum Difference between two images,
+    defined as the largest absolute pixel-value difference.
+
+    Required parameters:
+        -input=PATH      Path to the original image.
+        -compared=PATH   Path to the image being compared.
+
+    Output:
+        Prints the maximum absolute difference to the terminal.
+        A value of 0 means the images are identical.
+
+    Example:
+        python app.py --md -input=images_input/lena.bmp -compared=images_output/negative.bmp
+
+
+--------------------------------------------------
+GENERAL NOTES
+--------------------------------------------------
+
+- Use quotation marks around paths containing spaces.
+- Input images must be readable by the program.
+- Image processing operations save their results to the
+  specified output path.
+- Image quality metrics print numerical results instead
+  of saving a new image.
+- Pixel intensity values are represented in the range [0, 255].
+- The program supports grayscale and color images for the
+  operations implemented in the source code.
+
+""")
+
 
 
 # ----- Code ------
@@ -243,15 +474,35 @@ def doEnlargement(params):
 
 def doAMF(params):
     dic_param = parse_params(params)
-
-
     imag = readimage(dic_param['input'])
+    # Obtenemos m y n de los parámetros (por defecto 3x3 si no se indican)
+    m = int(dic_param.get('m', 3))
+    n = int(dic_param.get('n', 3))
+    imag_new = np.copy(imag)
+    height = imag.shape[0]
+    width = imag.shape[1]
+    # Calculamos el radio o margen a ignorar en los bordes según el tamaño de la ventana
+    offset_m = m // 2
+    offset_n = n // 2
 
-    m = int(dic_param['m'])
-    n = int(dic_param['n'])
+    if imag.ndim == 3:
+            for x in range(offset_m, height - offset_m):
+                for y in range(offset_n, width - offset_n):
+                    # Ventana dinámica de m x n centrada en (x, y)
+                    window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1, :]
+                    total_sum = np.sum(window)
+                    imag_new[x, y] =  total_sum / (window.shape[0] * window.shape[1])
+    else:
+        for x in range(offset_m, height - offset_m):
+            for y in range(offset_n, width - offset_n):
+                # Ventana dinámica de m x n centrada en (x, y)
+                window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1]
+                total_sum = np.sum(window)
+                imag_new[x, y] =  total_sum / (window.shape[0] * window.shape[1])
+    imag_new = imag_new.astype(np.uint8)
+    saveimage(imag_new, dic_param['output'])
 
-    j = imag.shape[0]
-    k = imag.shape[1]
+
 
 
 def doMidpoint(params):
@@ -315,7 +566,17 @@ def doPMSE(params):
     print(f"PMSE is: {pmse_value:.4f}")
         
         
-        
+def doMD(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    img_res = readimage(dic_param['compared'])
+
+    img1_f = img.astype(np.float32)
+    img2_f = img_res.astype(np.float32)
+
+    md_value = np.max(np.abs(img1_f - img2_f))
+
+    print(f"MD is: {md_value:.4f}")        
     
         
     
@@ -328,7 +589,7 @@ if len(sys.argv) == 1:
     print("No command line parameters given.\n")
     sys.exit()
 
-if len(sys.argv) == 2:
+if len(sys.argv) == 2 and sys.argv[1] != '--help':
     print("Too few command line parameters given.\n")
     sys.exit()
 
@@ -371,4 +632,13 @@ elif command == '--mse':
 elif command == '--pmse':
     doPMSE(param)
     
+elif command == '--md':
+    doMD(param)
 
+
+elif command == '--amean':
+    doAMF(param)
+
+
+elif command == '--help':
+    show_help()
