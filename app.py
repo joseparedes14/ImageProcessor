@@ -250,8 +250,6 @@ def readimage(path):
     im = Image.open(path)
     
     
-
-    
     arr = np.array(im.getdata())
     # .getdata() devuelve los datos como una larga tira de pixeles sin 
     # organizar en filas y columnas.
@@ -358,21 +356,6 @@ def doHorFlip(params):
     result = imag[:, ::-1]
     saveimage(result, dic_param['output'])
     
-    '''
-    dic_param = parse_params(params)
-    imag = readimage(dic_param['input'])
-
-    zeros = np.zeros_like(imag)
-
-    height = zeros.shape[0]
-    width = zeros.shape[1]
-
-    for x in range(height):
-        for  y in range(width):
-            zeros[x, width - y - 1] = imag[x,y]
- 
-    saveimage(zeros, dic_param['output'])
-    '''
 
 
 # (G2) Vertical flip (--vflip)
@@ -381,21 +364,7 @@ def doVerFlip(params):
     imag = readimage(dic_param['input'])
     result = imag[::-1]
     saveimage(result, dic_param['output'])
-    
-    '''
-    zeros = np.zeros_like(imag)
-    i = 0
-    j = 0
-    k = imag.shape[0] - 1 
-    while k >=  0:
-        while j <= imag.shape[1] - 1:
-            zeros[i][j] = imag[k][j]
-            j+=1
-        j = 0
-        i+=1
-        k -= 1
-    saveimage(zeros, dic_param['output'])
-    '''
+
 
 
 # (G3) Diagonal flip (--dflip)
@@ -404,20 +373,7 @@ def doDiagonalFlip(params):
     imag = readimage(dic_param['input'])
     result = imag[::-1, ::-1]
     saveimage(result, dic_param['output'])
-    '''
-    zeros = np.zeros_like(imag)
-    i = 0
-    k = imag.shape[0] - 1
-    while k >= 0:
-        j = imag.shape[1] - 1
-        l = 0
-        while j >= 0:
-            zeros[i][l] = imag[k][j]
-            j -= 1
-            l += 1
-        i += 1
-        k -= 1
-    '''
+ 
 
 
 # (G4) Image shrinking (--shrink)
@@ -425,22 +381,7 @@ def doShrink(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     factor = int(dic_param['value'])
-    height = imag.shape[0]
-    width = imag.shape[1]
-    new_height = height // factor
-    new_width = width // factor
-    
-    if imag.ndim == 3:  # Si es a color
-        channels = imag.shape[2]
-        zeros = np.zeros((new_height, new_width, channels), dtype=imag.dtype)
-    else:  # Si es blanco y negro 
-        zeros = np.zeros((new_height, new_width), dtype=imag.dtype)
-           
-    for i in range(new_height):
-        for j in range(new_width):
-            x = i * factor
-            y = j * factor
-            zeros[i,j] = imag[x,y]
+    zeros = imag[::factor, ::factor]
     saveimage(zeros, dic_param['output'])
        
     
@@ -449,25 +390,8 @@ def doShrink(params):
 def doEnlargement(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
-    
     factor = int(dic_param['value'])
-    height = imag.shape[0]
-    width = imag.shape[1]
-    new_height = height*factor
-    new_width = width*factor
-    
-    if imag.ndim == 3:  # Si es a color
-        channels = imag.shape[2]
-        zeros = np.zeros((new_height, new_width, channels), dtype=imag.dtype)
-    else:  # Si es blanco y negro 
-        zeros = np.zeros((new_height, new_width), dtype=imag.dtype)
-         
-    for i in range(new_height):
-        for j in range(new_width):
-            orig_i = i // factor
-            orig_j = j // factor
-            zeros[i, j] = imag[orig_i, orig_j]
-            
+    zeros = np.repeat(np.repeat(imag, factor, axis=0), factor, axis=1)
     saveimage(zeros, dic_param['output'])
 
 
