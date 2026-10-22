@@ -579,6 +579,51 @@ def doMD(params):
     print(f"MD is: {md_value:.4f}")        
     
         
+
+# Signal-to-noise ratio (--snr)
+def doSNR(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    img_res = readimage(dic_param['compared'])
+
+    img1_f = img.astype(np.float32)
+    img2_f = img_res.astype(np.float32)
+
+    signal_power = np.sum(img1_f ** 2)
+    noise_power = np.sum((img1_f - img2_f) ** 2)
+
+    if noise_power == 0:
+        snr_value = float('inf')
+    elif signal_power == 0:
+        snr_value = float('-inf')
+    else:
+        snr_value = 10 * np.log10(signal_power / noise_power)
+
+    print(f"SNR is: {snr_value:.4f} dB")
+
+
+# Peak signal-to-noise ratio (--psnr)
+def doPSNR(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    img_res = readimage(dic_param['compared'])
+
+    img1_f = img.astype(np.float32)
+    img2_f = img_res.astype(np.float32)
+
+    noise_power = np.sum((img1_f - img2_f) ** 2)
+    peak_value = np.max(img1_f)
+
+    if noise_power == 0:
+        psnr_value = float('inf')
+    elif peak_value == 0:
+        psnr_value = float('-inf')
+    else:
+        psnr_value = 10 * np.log10(
+            (img1_f.size * peak_value ** 2) / noise_power
+        )
+
+    print(f"PSNR is: {psnr_value:.4f} dB")
     
     
 
@@ -642,3 +687,11 @@ elif command == '--amean':
 
 elif command == '--help':
     show_help()
+
+
+
+elif command == '--snr':
+    doSNR(param)
+
+elif command == '--psnr':
+    doPSNR(param)
