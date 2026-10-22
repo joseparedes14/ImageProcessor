@@ -222,6 +222,20 @@ IMAGE QUALITY METRICS
         python app.py --md -input=images_input/lena.bmp -compared=images_output/negative.bmp
 
 
+13. --psnr
+    Calculates the Peak Signal-to-Noise Ratio between two images in decibels (dB).
+
+    Required parameters:
+        -input=PATH      Path to the original image.
+        -compared=PATH   Path to the image being compared.
+
+    Output:
+        Prints the PSNR value in dB to the terminal.
+        Higher values generally indicate higher image quality and closer similarity.
+
+    Example:
+        python app.py --psnr -input=images_input/lena.bmp -compared=images_output/negative.bmp
+
 --------------------------------------------------
 GENERAL NOTES
 --------------------------------------------------
@@ -612,7 +626,8 @@ elif command == '--amean':
 elif command == '--help':
     show_help()
 
-
+elif command == '--psnr':
+    doPSNR(param)
 
 elif command == '--snr':
     doSNR(param)
