@@ -422,21 +422,15 @@ def doAMF(params):
     # Calculamos el radio o margen a ignorar en los bordes según el tamaño de la ventana
     offset_m = m // 2
     offset_n = n // 2
-
-    if imag.ndim == 3:
-            for x in range(offset_m, height - offset_m):
-                for y in range(offset_n, width - offset_n):
-                    # Ventana dinámica de m x n centrada en (x, y)
-                    window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1, :]
-                    total_sum = np.sum(window)
-                    imag_new[x, y] =  total_sum / (window.shape[0] * window.shape[1])
-    else:
-        for x in range(offset_m, height - offset_m):
-            for y in range(offset_n, width - offset_n):
-                # Ventana dinámica de m x n centrada en (x, y)
+    
+    for x in range(offset_m, height - offset_m):
+        for y in range(offset_n, width - offset_n):
+            if imag.ndim == 3:
+                window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1, :]
+                imag_new[x, y] =  np.mean(window,axis=(0,1))
+            else:
                 window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1]
-                total_sum = np.sum(window)
-                imag_new[x, y] =  total_sum / (window.shape[0] * window.shape[1])
+                imag_new[x, y] =  np.mean(window)
     imag_new = imag_new.astype(np.uint8)
     saveimage(imag_new, dic_param['output'])
 
@@ -455,24 +449,18 @@ def doMidpoint(params):
     # Calculamos el radio o margen a ignorar en los bordes según el tamaño de la ventana
     offset_m = m // 2
     offset_n = n // 2
-    # Manejamos si la imagen es a color (3D) o en escala de grises (2D)
-    if imag.ndim == 3:
-        for x in range(offset_m, height - offset_m):
-            for y in range(offset_n, width - offset_n):
-                # Ventana dinámica de m x n centrada en (x, y)
+    
+    for x in range(offset_m, height - offset_m):
+        for y in range(offset_n, width - offset_n):
+            if imag.ndim == 3:
                 window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1, :]
                 vmin = np.min(window, axis=(0, 1))
-                vmax = np.max(window, axis=(0, 1))
-                imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2
-    else:
-        for x in range(offset_m, height - offset_m):
-            for y in range(offset_n, width - offset_n):
-                # Ventana dinámica de m x n centrada en (x, y)
+                vmax = np.max(window, axis=(0, 1))      
+            else:
                 window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1]
                 vmin = np.min(window)
-                vmax = np.max(window)
-                imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2
-                
+                vmax = np.max(window)  
+            imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2            
     imag_new = imag_new.astype(np.uint8)
     saveimage(imag_new, dic_param['output'])
     
