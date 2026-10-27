@@ -409,6 +409,7 @@ def doEnlargement(params):
     saveimage(zeros, dic_param['output'])
 
 
+# ----- noise removal methods-----
 
 def doAMF(params):
     dic_param = parse_params(params)
@@ -488,7 +489,7 @@ def doPMSE(params):
     if mse_value == 0:
         pmse_value = 0.0
     else:
-        pmse_value = mse_value / (255 ** 2)
+        pmse_value = mse_value / (np.max(img1_f) ** 2)
     print(f"PMSE is: {pmse_value:.4f}")
         
         
@@ -606,6 +607,8 @@ elif command == '--pmse':
 elif command == '--md':
     doMD(param)
 
+elif command == '--mid':
+       doMidpoint(param)
 
 elif command == '--amean':
     doAMF(param)
@@ -619,6 +622,3 @@ elif command == '--psnr':
 
 elif command == '--snr':
     doSNR(param)
-
-elif command == '--psnr':
-    doPSNR(param)
