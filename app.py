@@ -11,16 +11,18 @@ from datetime import datetime
 
 # ---- HELP ----
 
+
 def show_help():
     print("""
 IMAGE PROCESSOR - HELP
 ======================
 
 Usage:
-    python app.py --command -parameter=value ...
+    python app.py --command -argument=value [...]
 
 All image paths must point to valid image files.
 For image processing operations, -input and -output are required.
+For image quality metrics, -input and -compared are required.
 
 --------------------------------------------------
 BASIC IMAGE OPERATIONS
@@ -39,7 +41,7 @@ BASIC IMAGE OPERATIONS
        Positive values make the image brighter.
        Negative values make the image darker.
        Zero leaves the image unchanged.
-       Pixel values are clipped to the range [0, 255].
+       Pixel values are clipped to [0, 255].
 
    Example:
        python app.py --brightness -input=images_input/lena.bmp -output=images_output/bright.bmp -value=30
@@ -82,8 +84,7 @@ GEOMETRIC TRANSFORMATIONS
 --------------------------------------------------
 
 4. --hflip
-   Flips an image horizontally, reversing the order of
-   its columns (left to right).
+   Flips an image horizontally, reversing its columns.
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -94,8 +95,7 @@ GEOMETRIC TRANSFORMATIONS
 
 
 5. --vflip
-   Flips an image vertically, reversing the order of
-   its rows (top to bottom).
+   Flips an image vertically, reversing its rows.
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -106,8 +106,7 @@ GEOMETRIC TRANSFORMATIONS
 
 
 6. --dflip
-   Reverses both the rows and columns of an image,
-   producing a 180-degree rotation.
+   Reverses both rows and columns, producing a 180-degree rotation.
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -118,9 +117,8 @@ GEOMETRIC TRANSFORMATIONS
 
 
 7. --shrink
-   Reduces the image dimensions by an integer factor.
-   It keeps one pixel from each factor-by-factor region,
-   specifically the pixel at the top-left position.
+   Reduces image dimensions by an integer factor, keeping one
+   pixel from each factor-by-factor region (top-left pixel).
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -133,8 +131,7 @@ GEOMETRIC TRANSFORMATIONS
 
 8. --enlarge
    Enlarges an image by an integer factor using nearest-neighbor
-   replication. Each original pixel is repeated horizontally
-   and vertically.
+   replication. Each pixel is repeated horizontally and vertically.
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -146,13 +143,13 @@ GEOMETRIC TRANSFORMATIONS
 
 
 --------------------------------------------------
-SPATIAL FILTERS
+NOISE REMOVAL FILTERS (N4)
 --------------------------------------------------
 
 9. --amean
-   Applies an arithmetic mean filter to reduce local variations
-   and smooth the image. Each pixel is replaced by the mean
-   of the pixel values within its local window.
+   Applies an arithmetic mean filter. Each pixel is replaced
+   by the arithmetic mean of the pixel values in its local window.
+   This reduces local variations but may blur edges and details.
 
    Required parameters:
        -input=PATH       Path to the input image.
@@ -162,7 +159,7 @@ SPATIAL FILTERS
        -m=INTEGER        Window height (default: 3).
        -n=INTEGER        Window width (default: 3).
 
-   Note:
+   Notes:
        The default window size is 3x3.
        Border pixels outside the processed region remain unchanged.
 
@@ -170,87 +167,95 @@ SPATIAL FILTERS
        python app.py --amean -input=images_input/lena.bmp -output=images_output/amean.bmp -m=3 -n=3
 
 
+10. --mid
+    Applies a midpoint filter. Each pixel is replaced by the
+    average of the minimum and maximum values in its local window.
+
+    Required parameters:
+        -input=PATH       Path to the input image.
+        -output=PATH      Path to save the filtered image.
+
+    Optional parameters:
+        -m=INTEGER        Window height (default: 3).
+        -n=INTEGER        Window width (default: 3).
+
+    Notes:
+        The default window size is 3x3.
+        Border pixels outside the processed region remain unchanged.
+
+    Example:
+        python app.py --mid -input=images_input/lena.bmp -output=images_output/mid.bmp -m=3 -n=3
+
+
 --------------------------------------------------
 IMAGE QUALITY METRICS
 --------------------------------------------------
 
-10. --mse
+All metrics compare the input image with a second image.
+Use the original noise-free image as -input when evaluating
+noise removal results, and the noisy or filtered image as -compared.
+
+11. --mse
     Calculates the Mean Squared Error between two images.
 
     Required parameters:
-        -input=PATH      Path to the original image.
-        -compared=PATH   Path to the image being compared.
+        -input=PATH       Path to the original image.
+        -compared=PATH    Path to the image being evaluated.
 
-    Output:
-        Prints the MSE value to the terminal.
-        Lower values indicate smaller average squared differences.
-        An MSE of 0 means the images are identical.
 
     Example:
-        python app.py --mse -input=images_input/lena.bmp -compared=images_output/negative.bmp
+        python app.py --mse -input=images_input/lena.bmp -compared=images_output/amean.bmp
 
 
-11. --pmse
-    Calculates the Peak-normalized Mean Squared Error by
-    dividing the MSE by 255 squared.
+12. --pmse
+    Calculates the Peak-normalized Mean Squared Error by dividing
+    the MSE by the square of the maximum intensity in the input image.
 
     Required parameters:
-        -input=PATH      Path to the original image.
-        -compared=PATH   Path to the image being compared.
-
-    Output:
-        Prints the PMSE value to the terminal.
-        A value of 0 means the images are identical.
+        -input=PATH       Path to the original image.
+        -compared=PATH    Path to the image being evaluated.
 
     Example:
-        python app.py --pmse -input=images_input/lena.bmp -compared=images_output/negative.bmp
+        python app.py --pmse -input=images_input/lena.bmp -compared=images_output/amean.bmp
 
 
-12. --md
+13. --snr
+    Calculates the Signal-to-Noise Ratio in decibels (dB).
+
+    Required parameters:
+        -input=PATH       Path to the original image.
+        -compared=PATH    Path to the image being evaluated.
+
+
+    Example:
+        python app.py --snr -input=images_input/lena.bmp -compared=images_output/amean.bmp
+
+
+14. --psnr
+    Calculates the Peak Signal-to-Noise Ratio in decibels (dB).
+
+    Required parameters:
+        -input=PATH       Path to the original image.
+        -compared=PATH    Path to the image being evaluated.
+
+    Example:
+        python app.py --psnr -input=images_input/lena.bmp -compared=images_output/amean.bmp
+
+
+15. --md
     Calculates the Maximum Difference between two images,
     defined as the largest absolute pixel-value difference.
 
     Required parameters:
-        -input=PATH      Path to the original image.
-        -compared=PATH   Path to the image being compared.
-
-    Output:
-        Prints the maximum absolute difference to the terminal.
-        A value of 0 means the images are identical.
+        -input=PATH       Path to the original image.
+        -compared=PATH    Path to the image being evaluated.
 
     Example:
-        python app.py --md -input=images_input/lena.bmp -compared=images_output/negative.bmp
+        python app.py --md -input=images_input/lena.bmp -compared=images_output/amean.bmp
 
+"""
+)
 
-13. --psnr
-    Calculates the Peak Signal-to-Noise Ratio between two images in decibels (dB).
-
-    Required parameters:
-        -input=PATH      Path to the original image.
-        -compared=PATH   Path to the image being compared.
-
-    Output:
-        Prints the PSNR value in dB to the terminal.
-        Higher values generally indicate higher image quality and closer similarity.
-
-    Example:
-        python app.py --psnr -input=images_input/lena.bmp -compared=images_output/negative.bmp
-
---------------------------------------------------
-GENERAL NOTES
---------------------------------------------------
-
-- Use quotation marks around paths containing spaces.
-- Input images must be readable by the program.
-- Image processing operations save their results to the
-  specified output path.
-- Image quality metrics print numerical results instead
-  of saving a new image.
-- Pixel intensity values are represented in the range [0, 255].
-- The program supports grayscale and color images for the
-  operations implemented in the source code.
-
-""")
 
 
 
@@ -337,7 +342,7 @@ def doBrightness(params):
     else:
         imag = np.minimum(255, imag + constant)
 
-    saveimage(imag, dic_param['output'])
+    saveimage(imag, dic_param.get('output'))
 
 
 # (B2) Image contrast modification (--contrast)
@@ -349,7 +354,7 @@ def doContrast(params):
     center = 127
     result = np.minimum(255, np.maximum(0, center + alpha * (imag - center)))
     result = result.astype(np.uint8)
-    saveimage(result, dic_param['output'])
+    saveimage(result, dic_param.get('output'))
 
 
 # (B3) Negative (--negative)
@@ -357,7 +362,7 @@ def doNegative(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     result = 255 - imag
-    saveimage(result, dic_param['output'])
+    saveimage(result, dic_param.get('output'))
     
 
 
@@ -368,7 +373,7 @@ def doHorFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     result = imag[:, ::-1]
-    saveimage(result, dic_param['output'])
+    saveimage(result, dic_param.get('output'))
     
 
 
@@ -377,7 +382,7 @@ def doVerFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     result = imag[::-1]
-    saveimage(result, dic_param['output'])
+    saveimage(result, dic_param.get('output'))
 
 
 
@@ -386,7 +391,7 @@ def doDiagonalFlip(params):
     dic_param = parse_params(params)
     imag = readimage(dic_param['input'])
     result = imag[::-1, ::-1]
-    saveimage(result, dic_param['output'])
+    saveimage(result, dic_param.get('output'))
  
 
 
@@ -396,7 +401,7 @@ def doShrink(params):
     imag = readimage(dic_param['input'])
     factor = int(dic_param['value'])
     zeros = imag[::factor, ::factor]
-    saveimage(zeros, dic_param['output'])
+    saveimage(zeros, dic_param.get('output'))
        
     
 
@@ -406,7 +411,7 @@ def doEnlargement(params):
     imag = readimage(dic_param['input'])
     factor = int(dic_param['value'])
     zeros = np.repeat(np.repeat(imag, factor, axis=0), factor, axis=1)
-    saveimage(zeros, dic_param['output'])
+    saveimage(zeros, dic_param.get('output'))
 
 
 # ----- noise removal methods-----
@@ -433,7 +438,7 @@ def doAMF(params):
                 window = imag[x - offset_m : x + offset_m + 1, y - offset_n : y + offset_n + 1]
                 imag_new[x, y] =  np.mean(window)
     imag_new = imag_new.astype(np.uint8)
-    saveimage(imag_new, dic_param['output'])
+    saveimage(imag_new, dic_param.get('output'))
 
 
 
@@ -463,7 +468,7 @@ def doMidpoint(params):
                 vmax = np.max(window)  
             imag_new[x, y] = (vmax.astype(np.float32) + vmin.astype(np.float32)) / 2            
     imag_new = imag_new.astype(np.uint8)
-    saveimage(imag_new, dic_param['output'])
+    saveimage(imag_new, dic_param.get('output'))
     
 
 # ------- Geometric transforms ----------
