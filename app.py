@@ -307,7 +307,7 @@ def saveimage(arr, output=None):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         # to avoid using : on names, because on Windows is 
         # prohibited.
-        default_name = f"result-{timestamp}.bmp"
+        default_name = f"images_output/result-{timestamp}.bmp"
         newIm.save(default_name)
 
 
