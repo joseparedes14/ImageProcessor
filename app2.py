@@ -4,9 +4,11 @@ from PIL import Image
 import sys
 import numpy as np
 from datetime import datetime
-
-
+import matplotlib.pyplot as plt
 # ------ 
+
+
+L = 256
 
 
 def readimage(path):
@@ -14,28 +16,16 @@ def readimage(path):
     
     
     arr = np.array(im.getdata())
-    # .getdata() devuelve los datos como una larga tira de pixeles sin 
-    # organizar en filas y columnas.
-    # Si es en color, arr = [ (255, 0, 0), (100, 150, 200), ... ]
-    # Si es en blanco y negro, arr = [ 0, 1, 4, 2, 132, ...]
-    
+   
     if arr.ndim == 1: 
-        # si cada posicion del array tiene un solo valor, es en escala de grises
-        # ese valor es un entero de 8 bits que representa un valor entre 0-255
-        # osea que cada posicion del array guarda un nº entre 0-255, siendo 0 negro y 255 blanco
+       
         numColorChannels = 1
         arr = arr.reshape(im.size[1], im.size[0])
-        # im.size[0] es el ancho, nº columnas
-        # im.size[1] es el alto, nº filas
-        # como la imagen es una cuadrícula y no una fila larga,
-        # hacemos reshape para recortar y ordenar en forma de tabla
-    
+     
     else:
         numColorChannels = arr.shape[1]
 
-        # en una imágen a color, cada píxel tiene 3 números, por eso
-        # la tira plana debe convertirse en una tabla de 3 dimensiones.
-        # En un cubo: alto, ancho y los 3 canales de color.
+ 
         arr = arr.reshape(im.size[1], im.size[0], numColorChannels)
 
     return arr
@@ -64,9 +54,59 @@ def parse_params(params):
 
 
 
+# Building the histogram and saving it
+
+
+def doHistogram(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+
+    if img.ndim == 3:
+        channel = int(dic_param.get('channel', 0))
+        img = img[:, :, channel]
+
+    histogram, bins = np.histogram(img, bins=256, range=(0, 256)) 
+    histogram = histogram / (img.shape[0] * img.shape[1])
+
+    if dic_param.get('image', False):
+        plt.bar(range(256), histogram, width=1)
+        plt.savefig(dic_param.get('output', 'images_output/histogram.png'))
+        plt.close()
+
+    return histogram
+
+
+
 
 
 # H1
+
+def doHUniform(params):
+    histogram = doHistogram(params)
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    s = np.zeros_like(histogram)
+
+    for i in range(len(s)):
+        s[i] = (L-1)*np.sum(histogram[0:i+1])
+        s = np.round(s).astype(np.uint8)
+
+    img_enhanced = s[img]
+
+    
+    output_path = dic_param.get('output', 'images_output/enhanced_uniform.png')
+    saveimage(img_enhanced, output_path) # Asegúrate de usar tu función para guardar imágenes
+
+    return img_enhanced
+
+
+
+
+
+
+
+
+
 
 
 # C1
@@ -131,5 +171,8 @@ param = sys.argv[2:]
 
 
 
-if command == '--brightness':
-    pass
+if command == '--histogram':
+    doHistogram(param)
+
+elif command == '--huniform':
+    doHUniform(param)
