@@ -92,24 +92,14 @@ def doHUniform(params):
 # ---------- IMAGE CHARACTERISTICS ----------------
 # C1
 def cmean(params):
-    dic_param= parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim==3:
-        img = img[:,:,int(dic_param.get('channel',0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
     print(f"Mean: {mean}")
     return mean
 
 def cvariance(params):
-    dic_param= parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim==3:
-        img = img[:,:,int(dic_param.get('channel',0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
     variance = np.sum((m-mean)**2*p)
@@ -120,12 +110,7 @@ def cvariance(params):
 # C2
 
 def cstdev(params):
-    dic_param= parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim==3:
-        img = img[:,:,int(dic_param.get('channel',0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
     variance = np.sum((m-mean)**2*p)
@@ -135,12 +120,7 @@ def cstdev(params):
 
 
 def cvarcoi(params):
-    dic_param= parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim==3:
-        img = img[:,:,int(dic_param.get('channel',0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
     variance = np.sum((m-mean)**2*p)
@@ -155,13 +135,7 @@ def cvarcoi(params):
 
 # C3
 def casyco(params):
-    dic_param = parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim == 3:
-        img = img[:, :, int(dic_param.get('channel', 0))]
-
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
 
     mean = np.sum(m * p)
@@ -176,13 +150,7 @@ def casyco(params):
 
 # C4
 def cflaco(params):
-    dic_param = parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim == 3:
-        img = img[:, :, int(dic_param.get('channel', 0))]
-
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     m = np.arange(L)
 
     mean = np.sum(m * p)
@@ -198,12 +166,7 @@ def cflaco(params):
 
 # C5
 def cvarcoii(params):
-    dic_param = parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim == 3:
-        img = img[:, :, int(dic_param.get('channel', 0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     result = np.sum(p ** 2)
     print(f"Variation coefficient II: {result}")
     return result
@@ -211,12 +174,7 @@ def cvarcoii(params):
 
 #C6
 def centropy(params):
-    dic_param = parse_params(params)
-    img = readimage(dic_param['input'])
-    if img.ndim == 3:
-        img = img[:, :, int(dic_param.get('channel', 0))]
-    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
-    p = histogram / img.size
+    p = doHistogram(params)
     p = p[p > 0]
     result = -np.sum(p * np.log2(p))
     print(f"Entropy: {result}")
