@@ -141,10 +141,11 @@ def casyco(params):
     mean = np.sum(m * p)
     variance = np.sum((m - mean) ** 2 * p)
     sigma = np.sqrt(variance)
-    if sigma >0:
+    if sigma ** 3 > 0:
         result = np.sum((m - mean) ** 3 * p) / sigma ** 3
     else:
-        result =float('nan')
+        result = float('nan')
+
     print(f"Asymmetry coefficient: {result}")
     return result
 
