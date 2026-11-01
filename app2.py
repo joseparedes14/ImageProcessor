@@ -10,37 +10,25 @@ import matplotlib.pyplot as plt
 
 L = 256
 
-
+# ---------- LOADING AND SAVING IMAGES ----------
 def readimage(path):
     im = Image.open(path)
-    
-    
     arr = np.array(im.getdata())
-   
     if arr.ndim == 1: 
-       
         numColorChannels = 1
         arr = arr.reshape(im.size[1], im.size[0])
-     
     else:
         numColorChannels = arr.shape[1]
-
- 
         arr = arr.reshape(im.size[1], im.size[0], numColorChannels)
-
     return arr
 
 
 def saveimage(arr, output=None):
-
     newIm = Image.fromarray(arr.astype(np.uint8))
-
     if output:
         newIm.save(output)
     else:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # to avoid using : on names, because on Windows is 
-        # prohibited.
         default_name = f"images_output/result-{timestamp}.bmp"
         newIm.save(default_name)
 
@@ -54,9 +42,8 @@ def parse_params(params):
 
 
 
-# Building the histogram and saving it
 
-
+# ------- BUILDING AND SAVING HISTOGRAMS -----------
 def doHistogram(params):
     dic_param = parse_params(params)
     img = readimage(dic_param['input'])
@@ -78,7 +65,7 @@ def doHistogram(params):
 
 
 
-
+# -------- HISTOGRAM CALCULATION ALGORITHM --------- 
 # H1
 
 def doHUniform(params):
@@ -86,6 +73,7 @@ def doHUniform(params):
     dic_param = parse_params(params)
     img = readimage(dic_param['input'])
     s = np.zeros_like(histogram)
+
 
     for i in range(len(s)):
         s[i] = (L-1)*np.sum(histogram[0:i+1])
@@ -95,44 +83,213 @@ def doHUniform(params):
 
     
     output_path = dic_param.get('output', 'images_output/enhanced_uniform.png')
-    saveimage(img_enhanced, output_path) # Asegúrate de usar tu función para guardar imágenes
+    saveimage(img_enhanced, output_path) 
 
     return img_enhanced
 
 
 
-
-
-
-
-
-
-
-
+# ---------- IMAGE CHARACTERISTICS ----------------
 # C1
+def cmean(params):
+    dic_param= parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim==3:
+        img = img[:,:,int(dic_param.get('channel',0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
+    mean = np.sum(m * p)
+    print(f"Mean: {mean}")
+    return mean
 
+def cvariance(params):
+    dic_param= parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim==3:
+        img = img[:,:,int(dic_param.get('channel',0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
+    mean = np.sum(m * p)
+    variance = np.sum((m-mean)**2*p)
+    print(f"Variance: {variance}")
+    return variance
+    
 
 # C2
 
+def cstdev(params):
+    dic_param= parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim==3:
+        img = img[:,:,int(dic_param.get('channel',0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
+    mean = np.sum(m * p)
+    variance = np.sum((m-mean)**2*p)
+    sigma = np.sqrt(variance)
+    print(f'Standard deviation: {sigma}')
+    return sigma
+
+
+def cvarcoi(params):
+    dic_param= parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim==3:
+        img = img[:,:,int(dic_param.get('channel',0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
+    mean = np.sum(m * p)
+    variance = np.sum((m-mean)**2*p)
+    sigma = np.sqrt(variance)
+    if mean !=0:
+        result = sigma/mean
+    else:
+        result = float('nan')
+    print(f"Variation coefficient I: {result}")
+    return result
+
 
 # C3
+def casyco(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim == 3:
+        img = img[:, :, int(dic_param.get('channel', 0))]
 
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
 
+    mean = np.sum(m * p)
+    variance = np.sum((m - mean) ** 2 * p)
+    sigma = np.sqrt(variance)
+    if sigma >0:
+        result = np.sum((m - mean) ** 3 * p) / sigma ** 3
+    else:
+        result =float('nan')
+    print(f"Asymmetry coefficient: {result}")
+    return result
 
 # C4
+def cflaco(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim == 3:
+        img = img[:, :, int(dic_param.get('channel', 0))]
+
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    m = np.arange(L)
+
+    mean = np.sum(m * p)
+    variance = np.sum((m - mean) ** 2 * p)
+    sigma = np.sqrt(variance)
+    if sigma >0:
+        result = np.sum((m - mean) ** 4 * p) / sigma ** 4 - 3
+    else:
+        result = float('nan')    
+    print(f"Flattening coefficient: {result}")
+    return result
 
 
 # C5
+def cvarcoii(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim == 3:
+        img = img[:, :, int(dic_param.get('channel', 0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    result = np.sum(p ** 2)
+    print(f"Variation coefficient II: {result}")
+    return result
 
 
-# C6
+#C6
+def centropy(params):
+    dic_param = parse_params(params)
+    img = readimage(dic_param['input'])
+    if img.ndim == 3:
+        img = img[:, :, int(dic_param.get('channel', 0))]
+    histogram, _ = np.histogram(img, bins=256, range=(0, 256))
+    p = histogram / img.size
+    p = p[p > 0]
+    result = -np.sum(p * np.log2(p))
+    print(f"Entropy: {result}")
+    return result
 
 
 
+
+# ------ Implementation of linear image filtration algorithm in spatial domain basing on convolution --------
 # S4
 
 
+S4_MASKS = {
+    'S':  np.array([[-1,  1,  1],
+                    [-1, -2,  1],
+                    [-1,  1,  1]]),
+    'SW': np.array([[ 1,  1,  1],
+                    [-1, -2,  1],
+                    [-1, -1,  1]]),
+    'W':  np.array([[ 1,  1,  1],
+                    [ 1, -2,  1],
+                    [-1, -1, -1]]),
+    'NW': np.array([[ 1,  1,  1],
+                    [ 1, -2, -1],
+                    [ 1, -1, -1]]),
+}
 
+
+# UNIVERSAL CONVOLUTION
+def doConvolution(params):
+    dic_param = parse_params(params)
+    x = readimage(dic_param['input'])
+    h = S4_MASKS[dic_param.get('mask', 'S')]
+
+    M = h.shape[0] // 2
+    P, Q = x.shape[0], x.shape[1]
+    g = x.astype(float)
+
+    for p in range(M, P - M):
+        for q in range(M, Q - M):
+            total = 0
+            for i in range(-M, M + 1):
+                for j in range(-M, M + 1):
+                    total += h[i + M, j + M] * x[p + i, q + j]
+            g[p, q] = total
+    result = np.clip(np.round(g), 0, L - 1).astype(np.uint8)
+    saveimage(result, dic_param.get('output'))
+    return result
+
+
+
+# OPTIMIZED CONVOLUTION
+def doSExDetII(params):
+    dic_param = parse_params(params)
+    x = readimage(dic_param['input'])
+
+    P, Q = x.shape[0], x.shape[1]
+    g = x.copy()
+
+    r_prev = x[0, 0:Q-2] + x[0, 1:Q-1] + x[0, 2:Q]
+    r_cur  = x[1, 0:Q-2] + x[1, 1:Q-1] + x[1, 2:Q]
+    for p in range(1, P - 1):
+        r_next = x[p+1, 0:Q-2] + x[p+1, 1:Q-1] + x[p+1, 2:Q]
+        g[p, 1:Q-1] = r_prev + r_cur - r_next - 3 * x[p, 1:Q-1]
+        r_prev = r_cur
+        r_cur = r_next
+    result = np.clip(g, 0, L - 1).astype(np.uint8)
+    saveimage(result, dic_param.get('output'))
+    return result
+
+
+
+# -------- Implement non-linear image filtration algorithm in the spatial domain -------------
 # O3
 
 
@@ -176,3 +333,31 @@ if command == '--histogram':
 
 elif command == '--huniform':
     doHUniform(param)
+
+elif command == '--cmean':
+    cmean(param)
+    
+elif command == '--cvariance':
+    cvariance(param)
+
+elif command == '--cstdev':
+    cstdev(param)
+elif command == '--cvarcoi':
+    cvarcoi(param)
+
+elif command == '--casyco':
+    casyco(param)
+
+elif command == '--cflaco':
+    cflaco(param)
+
+elif command == '--cvarcoii':
+    cvarcoii(param)
+
+elif command == '--centropy':
+    centropy(param)
+elif command == '--convolution':
+    doConvolution(param)
+
+elif command == '--sexdetii':
+    doSExDetII(param)
