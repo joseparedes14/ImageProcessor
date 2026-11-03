@@ -72,18 +72,30 @@ def doHUniform(params):
     histogram = doHistogram(params)
     dic_param = parse_params(params)
     img = readimage(dic_param['input'])
+
     s = np.zeros_like(histogram)
 
+    minimum = int(dic_param.get('minimum', 0))
+    maximum = int(dic_param.get('maximum', L-1))
+
+    if not (0 <= minimum < maximum < L):
+        raise ValueError("Invalid minimum or maximum values")
 
     for i in range(len(s)):
-        s[i] = (L-1)*np.sum(histogram[0:i+1])
-        s = np.round(s).astype(np.uint8)
+        s[i] = (maximum-minimum)*np.sum(histogram[0:i+1]) + minimum
 
-    img_enhanced = s[img]
+    s = np.round(s).astype(np.uint8)
 
-    
+    img_enhanced = np.copy(img)
+
+    if img.ndim == 3:
+        channel = int(dic_param.get('channel', 0))
+        img_enhanced[:, :, channel] = s[img[:, :, channel]]
+    else:
+        img_enhanced = s[img]
+
     output_path = dic_param.get('output', 'images_output/enhanced_uniform.png')
-    saveimage(img_enhanced, output_path) 
+    saveimage(img_enhanced, output_path)
 
     return img_enhanced
 
