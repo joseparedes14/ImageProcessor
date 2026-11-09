@@ -263,7 +263,42 @@ def doSExDetII(params):
 # -------- Implement non-linear image filtration algorithm in the spatial domain -------------
 # O3
 
+def doSobel(params):
+    dic_param = parse_params(params)
+    imag = readimage(dic_param['input'])
 
+    imag_new = np.copy(imag)
+
+    height = imag.shape[0]
+    width = imag.shape[1]
+
+    # Offset para ignorar los bordes
+    offset = 1
+
+    for x in range(offset, height - offset):
+        for y in range(offset, width - offset):
+
+            
+            A0 = imag[x-1, y-1]
+            A1 = imag[x-1, y]
+            A2 = imag[x-1, y+1]
+            A3 = imag[x, y+1]
+            A4 = imag[x+1, y+1]
+            A5 = imag[x+1, y]
+            A6 = imag[x+1, y-1]
+            A7 = imag[x, y-1]
+
+            
+            X = (A2 + 2*A3 + A4) - (A0 + 2*A7 + A6)
+            Y = (A0 + 2*A1 + A2) - (A6 + 2*A5 + A4)
+
+            
+            imag_new[x, y] = np.sqrt(X.astype(np.float32)**2 + Y.astype(np.float32)**2)
+
+  
+    imag_new = np.clip(imag_new, 0, 255).astype(np.uint8)
+
+    saveimage(imag_new, dic_param.get('output'))
 
 
 
@@ -332,3 +367,7 @@ elif command == '--convolution':
 
 elif command == '--sexdetii':
     doSExDetII(param)
+
+
+elif command == '--sobel':
+    doSobel(param)
