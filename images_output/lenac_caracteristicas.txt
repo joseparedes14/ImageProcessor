@@ -1,0 +1,18 @@
+== ORIGINAL canal 0
+Mean: 180.15283203125
+Variance: 2428.883983373642
+Standard deviation: 49.28370910730687
+Variation coefficient I: 0.2735661080185402
+Asymmetry coefficient: -0.6877507764368885
+Flattening coefficient: -0.7882724061849831
+Variation coefficient II: 0.00751548761036247
+Entropy: 7.271548483130735
+== H1 canal 0
+Mean: 128.44652938842773
+Variance: 5465.413141259909
+Standard deviation: 73.92843256325612
+Variation coefficient I: 0.5755580389384708
+Asymmetry coefficient: -0.0038376536405410992
+Flattening coefficient: -1.2112181935907995
+Variation coefficient II: 0.007858079363359138
+Entropy: 7.129618847441604

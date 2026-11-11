@@ -1,10 +1,14 @@
 # ----- Libraries -----
 
 from PIL import Image
+import os
 import sys
+import time
+import tracemalloc
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
+
 # ------ 
 
 
@@ -20,7 +24,7 @@ def readimage(path):
     else:
         numColorChannels = arr.shape[1]
         arr = arr.reshape(im.size[1], im.size[0], numColorChannels)
-    return arr
+    return arr.astype(np.uint8)
 
 
 def saveimage(arr, output=None):
@@ -240,9 +244,10 @@ def doConvolution(params):
 
 
 # OPTIMIZED CONVOLUTION
+'''
 def doSExDetII(params):
     dic_param = parse_params(params)
-    x = readimage(dic_param['input'])
+    x = readimage(dic_param['input']).astype(np.int32)
 
     P, Q = x.shape[0], x.shape[1]
     g = x.copy()
@@ -257,6 +262,23 @@ def doSExDetII(params):
     result = np.clip(g, 0, L - 1).astype(np.uint8)
     saveimage(result, dic_param.get('output'))
     return result
+'''
+
+def doSExDetII(params):
+    dic_param = parse_params(params)
+    x = readimage(dic_param['input']).astype(np.int32)   # int32: no uint8 wrap-around
+
+    P, Q = x.shape[0], x.shape[1]
+    g = x.copy()                                          # borders = original pixels
+
+    for p in range(1, P - 1):
+        cs = x[p-1] + x[p] + x[p+1]                       # vertical 3-sum of every column
+        # S mask = right column + middle column - left column - 3*center
+        g[p, 1:Q-1] = cs[2:Q] + cs[1:Q-1] - cs[0:Q-2] - 3 * x[p, 1:Q-1]
+
+    result = np.clip(g, 0, L - 1).astype(np.uint8)
+    saveimage(result, dic_param.get('output'))
+    return result
 
 
 
@@ -265,9 +287,8 @@ def doSExDetII(params):
 
 def doSobel(params):
     dic_param = parse_params(params)
-    imag = readimage(dic_param['input'])
-
-    imag_new = np.copy(imag)
+    imag = readimage(dic_param['input']).astype(np.int32)
+    imag_new = imag.astype(np.float32) 
 
     height = imag.shape[0]
     width = imag.shape[1]
@@ -299,18 +320,7 @@ def doSobel(params):
     imag_new = np.clip(imag_new, 0, 255).astype(np.uint8)
 
     saveimage(imag_new, dic_param.get('output'))
-
-
-
-
-
-
-
-
-
-
-
-
+    return imag_new
 
 
 
@@ -369,5 +379,5 @@ elif command == '--sexdetii':
     doSExDetII(param)
 
 
-elif command == '--sobel':
+elif command == '--osobel':
     doSobel(param)

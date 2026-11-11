@@ -1,0 +1,18 @@
+== ORIGINAL
+Mean: 48.22202682495117
+Variance: 9971.252969256238
+Standard deviation: 99.85616139856488
+Variation coefficient I: 2.0707582815017025
+Asymmetry coefficient: 1.5878433952336606
+Flattening coefficient: 0.5212466477871587
+Variation coefficient II: 0.6933101739559788
+Entropy: 0.6995975044045024
+== H1
+Mean: 216.07708740234375
+Variance: 353.3066796027124
+Standard deviation: 18.796453910318096
+Variation coefficient I: 0.08698957458325225
+Asymmetry coefficient: 1.5878433952336604
+Flattening coefficient: 0.5212466477871578
+Variation coefficient II: 0.6933101739559788
+Entropy: 0.6995975044045024
