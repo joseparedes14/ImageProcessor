@@ -95,29 +95,43 @@ def doHistogram(params):
 
 def doHUniform(params):
     histogram = doHistogram(params)
+    # devuelve el vector de 256 valores, dividido entre el nº de píxeles
+    # entonces histogram[m] = H(m)/N
+    
     dic_param = parse_params(params)
     img = readimage(dic_param['input'])
 
     s = np.zeros_like(histogram)
+    # es la tabla de transformación.
+    # creamos un vector de 256 ceros, s[f] será el brillo 
+    # nuevo para el brillo antiguo f
 
     minimum = int(dic_param.get('minimum', 0))
-    maximum = int(dic_param.get('maximum', L-1))
+    maximum = int(dic_param.get('maximum', L-1)) #L-1=255
+    # los convierte a int porque el parseparam los devuelve str
 
     if not (0 <= minimum < maximum < L):
         raise ValueError("Invalid minimum or maximum values")
 
+    # cálculo de la tabla
     for i in range(len(s)):
         s[i] = (maximum-minimum)*np.sum(histogram[0:i+1]) + minimum
-
+        # histogram[0:i+1] son los valores H(0)/N ... H(i)/N
     s = np.round(s).astype(np.uint8)
+    # redondea al entero mas cercano y convierte e uint8,
+    # porque los brillos son enteros de 0 a 255
 
     img_enhanced = np.copy(img)
 
     if img.ndim == 3:
         channel = int(dic_param.get('channel', 0))
         img_enhanced[:, :, channel] = s[img[:, :, channel]]
+        #aplicamos a toda la imágen de gole.
+        # si es en color, solo se transforma el channel elegido
+        # s[img] sustituye cada pixel por s[valor_del_pixel]
     else:
         img_enhanced = s[img]
+        # transforma toda la imagen
 
     output_path = dic_param.get('output', 'images_output/enhanced_uniform.png')
     saveimage(img_enhanced, output_path)
