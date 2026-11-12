@@ -11,6 +11,27 @@ import matplotlib.pyplot as plt
 
 # ------ 
 
+def show_help():
+    print("""
+IMAGE PROCESSOR - HELP
+======================
+
+Usage:
+    python app2.py --command -argument=value [...]
+
+Commands:
+  --help                         Show this help
+  --histogram   --input= [--channel=] [--image=1] [--output=]
+  --huniform    --input= [--minimum=] [--maximum=] [--channel=] [--output=]
+  --cmean | --cvariance | --cstdev | --cvarcoi | --casyco |
+  --cflaco | --cvarcoii | --centropy        --input= [--channel=]
+  --convolution --input= [--mask=S|SW|W|NW] [--output=]
+  --sexdetii    --input= [--output=]        (optimized convolution, mask S)
+  --osobel      --input= [--output=]
+
+Example:
+  python app2.py --osobel --input=lena.bmp --output=images_output/sobel.bmp
+""")
 
 L = 256
 
@@ -205,15 +226,15 @@ def centropy(params):
 
 
 S4_MASKS = {
-    'S':  np.array([[-1,  1,  1],
-                    [-1, -2,  1],
-                    [-1,  1,  1]]),
-    'SW': np.array([[ 1,  1,  1],
-                    [-1, -2,  1],
-                    [-1, -1,  1]]),
-    'W':  np.array([[ 1,  1,  1],
+    'S':  np.array([[-1, -1, -1],
                     [ 1, -2,  1],
-                    [-1, -1, -1]]),
+                    [ 1,  1,  1]]),
+    'SW': np.array([[ 1, -1, -1],
+                    [ 1, -2, -1],
+                    [ 1,  1,  1]]),
+    'W':  np.array([[ 1,  1, -1],
+                    [ 1, -2, -1],
+                    [ 1,  1, -1]]),
     'NW': np.array([[ 1,  1,  1],
                     [ 1, -2, -1],
                     [ 1, -1, -1]]),
@@ -244,25 +265,7 @@ def doConvolution(params):
 
 
 # OPTIMIZED CONVOLUTION
-'''
-def doSExDetII(params):
-    dic_param = parse_params(params)
-    x = readimage(dic_param['input']).astype(np.int32)
 
-    P, Q = x.shape[0], x.shape[1]
-    g = x.copy()
-
-    r_prev = x[0, 0:Q-2] + x[0, 1:Q-1] + x[0, 2:Q]
-    r_cur  = x[1, 0:Q-2] + x[1, 1:Q-1] + x[1, 2:Q]
-    for p in range(1, P - 1):
-        r_next = x[p+1, 0:Q-2] + x[p+1, 1:Q-1] + x[p+1, 2:Q]
-        g[p, 1:Q-1] = r_prev + r_cur - r_next - 3 * x[p, 1:Q-1]
-        r_prev = r_cur
-        r_cur = r_next
-    result = np.clip(g, 0, L - 1).astype(np.uint8)
-    saveimage(result, dic_param.get('output'))
-    return result
-'''
 
 def doSExDetII(params):
     dic_param = parse_params(params)
@@ -270,11 +273,8 @@ def doSExDetII(params):
 
     P, Q = x.shape[0], x.shape[1]
     g = x.copy()                                          # borders = original pixels
-
-    for p in range(1, P - 1):
-        cs = x[p-1] + x[p] + x[p+1]                       # vertical 3-sum of every column
-        # S mask = right column + middle column - left column - 3*center
-        g[p, 1:Q-1] = cs[2:Q] + cs[1:Q-1] - cs[0:Q-2] - 3 * x[p, 1:Q-1]
+    rs = x[:, 0:Q-2] + x[:, 1:Q-1] + x[:, 2:Q]
+    g[1:P-1, 1:Q-1] = rs[2:P] - rs[0:P-2] + rs[1:P-1] - 3 * x[1:P-1, 1:Q-1]
 
     result = np.clip(g, 0, L - 1).astype(np.uint8)
     saveimage(result, dic_param.get('output'))
@@ -324,11 +324,15 @@ def doSobel(params):
 
 
 
-
+# ---- Parameters -----
 
 
 if len(sys.argv) == 1:
     print("No command line parameters given.\n")
+    sys.exit()
+
+if sys.argv[1] == '--help':
+    show_help()
     sys.exit()
 
 if len(sys.argv) == 2 and sys.argv[1] != '--help':
@@ -337,9 +341,6 @@ if len(sys.argv) == 2 and sys.argv[1] != '--help':
 
 command = sys.argv[1]
 param = sys.argv[2:]
-# .....
-
-
 
 
 
