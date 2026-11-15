@@ -337,6 +337,24 @@ def doSobel(params):
     return imag_new
 
 
+# --- Time ---
+
+def doBenchmark(params):
+    dic_param = parse_params(params)
+    print("| Image (size) | doConvolution [s] | doSExDetII [s] | Speedup |")
+    print("|---|---|---|---|")
+    for path in dic_param['input'].split(','):
+        h, w = readimage(path).shape[:2]
+
+        t0 = time.perf_counter()
+        doConvolution([f'--input={path}', '--mask=S', '--output=images_output/bench1.bmp'])
+        t_conv = time.perf_counter() - t0
+
+        t0 = time.perf_counter()
+        doSExDetII([f'--input={path}', '--output=images_output/bench2.bmp'])
+        t_opt = time.perf_counter() - t0
+
+        print(f"| {os.path.basename(path)} ({w}x{h}) | {t_conv:.3f} | {t_opt:.3f} | {t_conv / t_opt:.1f}x |")
 
 # ---- Parameters -----
 
@@ -396,3 +414,6 @@ elif command == '--sexdetii':
 
 elif command == '--osobel':
     doSobel(param)
+    
+elif command == '--benchmark':
+    doBenchmark(param)
