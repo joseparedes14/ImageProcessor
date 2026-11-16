@@ -270,7 +270,7 @@ def doConvolution(params):
             total = 0
             for i in range(-M, M + 1):
                 for j in range(-M, M + 1):
-                    total += h[i + M, j + M] * x[p + i, q + j]
+                    total += h[M - i, M - j] * x[p + i, q + j]
             g[p, q] = total
     result = np.clip(np.round(g), 0, L - 1).astype(np.uint8)
     saveimage(result, dic_param.get('output'))
