@@ -288,7 +288,7 @@ def doSExDetII(params):
     P, Q = x.shape[0], x.shape[1]
     g = x.copy()                                          # borders = original pixels
     rs = x[:, 0:Q-2] + x[:, 1:Q-1] + x[:, 2:Q]
-    g[1:P-1, 1:Q-1] = rs[2:P] - rs[0:P-2] + rs[1:P-1] - 3 * x[1:P-1, 1:Q-1]
+    g[1:P-1, 1:Q-1] = rs[0:P-2] - rs[2:P] + rs[1:P-1] - 3 * x[1:P-1, 1:Q-1]
 
     result = np.clip(g, 0, L - 1).astype(np.uint8)
     saveimage(result, dic_param.get('output'))
