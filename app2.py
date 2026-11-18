@@ -19,18 +19,215 @@ IMAGE PROCESSOR - HELP
 Usage:
     python app2.py --command -argument=value [...]
 
-Commands:
-  --help                         Show this help
-  --histogram   --input= [--channel=] [--image=1] [--output=]
-  --huniform    --input= [--minimum=] [--maximum=] [--channel=] [--output=]
-  --cmean | --cvariance | --cstdev | --cvarcoi | --casyco |
-  --cflaco | --cvarcoii | --centropy        --input= [--channel=]
-  --convolution --input= [--mask=S|SW|W|NW] [--output=]
-  --sexdetii    --input= [--output=]        (optimized convolution, mask S)
-  --osobel      --input= [--output=]
+All image paths must point to valid image files.
+For all operations, -input is required.
+If -output is not given, the result is saved in images_output/
+with a timestamped name (images_output/ must exist).
 
-Example:
-  python app2.py --osobel --input=lena.bmp --output=images_output/sobel.bmp
+--------------------------------------------------
+HISTOGRAMS (H1)
+--------------------------------------------------
+
+1. --histogram
+   Computes the normalized histogram of an image (256 bins,
+   each value divided by the total number of pixels).
+   Optionally saves it as a bar chart.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+
+   Optional parameters:
+       -channel=INTEGER  Color channel to analyze (default: 0).
+                         Ignored for grayscale images.
+       -image=1          If present, saves the histogram as a plot.
+       -output=PATH      Path to save the plot
+                         (default: images_output/histogram.png).
+
+   Notes:
+       -output is only used when -image is given.
+
+   Example:
+       python app2.py --histogram -input=images_input/lena.bmp -image=1 -output=images_output/hist.png
+
+
+2. --huniform
+   Enhances an image using the uniform histogram modification
+   (histogram equalization), remapping brightness levels so that
+   they spread between a minimum and a maximum value.
+
+   Required parameters:
+       -input=PATH       Path to the input image.
+
+   Optional parameters:
+       -minimum=INTEGER  Minimum output brightness (default: 0).
+       -maximum=INTEGER  Maximum output brightness (default: 255).
+       -channel=INTEGER  Color channel to transform (default: 0).
+                         Ignored for grayscale images.
+       -output=PATH      Path to save the processed image
+                         (default: images_output/enhanced_uniform.png).
+
+   Values:
+       0 <= minimum < maximum <= 255, otherwise an error is raised.
+
+   Notes:
+       In color images, only the selected channel is modified.
+
+   Example:
+       python app2.py --huniform -input=images_input/lena.bmp -output=images_output/huniform.bmp -minimum=0 -maximum=255
+
+
+--------------------------------------------------
+IMAGE CHARACTERISTICS (C1 - C6)
+--------------------------------------------------
+
+All characteristics are computed from the normalized histogram
+and printed on screen. No output image is produced.
+
+   Required parameters (for all of them):
+       -input=PATH       Path to the input image.
+
+   Optional parameters (for all of them):
+       -channel=INTEGER  Color channel to analyze (default: 0).
+                         Ignored for grayscale images.
+
+3. --cmean
+   Calculates the mean brightness of the image.
+
+   Example:
+       python app2.py --cmean -input=images_input/lena.bmp
+
+
+4. --cvariance
+   Calculates the variance of the brightness levels.
+
+   Example:
+       python app2.py --cvariance -input=images_input/lena.bmp
+
+
+5. --cstdev
+   Calculates the standard deviation (square root of the variance).
+
+   Example:
+       python app2.py --cstdev -input=images_input/lena.bmp
+
+
+6. --cvarcoi
+   Calculates the variation coefficient I (standard deviation
+   divided by the mean).
+
+   Notes:
+       Returns NaN if the mean is zero.
+
+   Example:
+       python app2.py --cvarcoi -input=images_input/lena.bmp
+
+
+7. --casyco
+   Calculates the asymmetry coefficient (skewness) of the histogram.
+
+   Notes:
+       Returns NaN if the standard deviation is zero.
+
+   Example:
+       python app2.py --casyco -input=images_input/lena.bmp
+
+
+8. --cflaco
+   Calculates the flattening coefficient (excess kurtosis)
+   of the histogram.
+
+   Notes:
+       Returns NaN if the standard deviation is zero.
+
+   Example:
+       python app2.py --cflaco -input=images_input/lena.bmp
+
+
+9. --cvarcoii
+   Calculates the variation coefficient II (sum of the squared
+   histogram values).
+
+   Example:
+       python app2.py --cvarcoii -input=images_input/lena.bmp
+
+
+10. --centropy
+    Calculates the information source entropy of the image,
+    in bits.
+
+    Example:
+        python app2.py --centropy -input=images_input/lena.bmp
+
+
+--------------------------------------------------
+LINEAR FILTERING - CONVOLUTION (S4)
+--------------------------------------------------
+
+11. --convolution
+    Applies a 3x3 convolution mask to the image (universal
+    implementation, slow). The masks are directional edge
+    detectors.
+
+    Required parameters:
+        -input=PATH       Path to the input image.
+
+    Optional parameters:
+        -mask=NAME        Mask to apply: S, SW, W or NW (default: S).
+        -output=PATH      Path to save the processed image.
+        
+    Example:
+        python app2.py --convolution -input=images_input/lena.bmp -output=images_output/conv.bmp -mask=SW
+
+12. --sexdetii
+    Optimized version of the convolution with mask S. It uses
+    row sums and vectorized operations, producing the same
+    result as --convolution much faster.
+
+    Required parameters:
+        -input=PATH       Path to the input image.
+
+    Optional parameters:
+        -output=PATH      Path to save the processed image.
+
+    Example:
+        python app2.py --sexdetii -input=images_input/lena.bmp -output=images_output/sexdetii.bmp
+
+--------------------------------------------------
+NON-LINEAR FILTERING - SOBEL OPERATOR (O3)
+--------------------------------------------------
+
+13. --osobel
+    Applies the Sobel operator for edge detection. For each pixel,
+    the horizontal and vertical gradients are computed and combined
+    as sqrt(X^2 + Y^2).
+
+    Required parameters:
+        -input=PATH       Path to the input image.
+
+    Optional parameters:
+        -output=PATH      Path to save the processed image.
+
+    Example:
+        python app2.py --osobel -input=images_input/lena.bmp -output=images_output/sobel.bmp
+
+
+--------------------------------------------------
+EXECUTION TIME
+--------------------------------------------------
+
+14. --benchmark
+    Compares the execution time of --convolution (mask S) and
+    --sexdetii on one or several images, and prints a table
+    with the times and the speedup.
+
+    Required parameters:
+        -input=PATH[,PATH,...]  One or more image paths,
+                                separated by commas (no spaces).
+
+    Example:
+        python app2.py --benchmark -input=images_input/lena.bmp,images_input/boat.bmp
+
+
 """)
 
 L = 256
