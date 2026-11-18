@@ -1,11 +1,14 @@
 # ----- Libraries -----
 
+
 from PIL import Image
+import os
 import sys
+import time
+import tracemalloc
 import numpy as np
 from datetime import datetime
-
-
+import matplotlib.pyplot as plt
 # ------ 
 
 
@@ -627,3 +630,47 @@ elif command == '--psnr':
 
 elif command == '--snr':
     doSNR(param)
+
+
+
+
+elif command == '--histogram':
+    doHistogram(param)
+
+elif command == '--huniform':
+    doHUniform(param)
+
+elif command == '--cmean':
+    cmean(param)
+    
+elif command == '--cvariance':
+    cvariance(param)
+
+elif command == '--cstdev':
+    cstdev(param)
+elif command == '--cvarcoi':
+    cvarcoi(param)
+
+elif command == '--casyco':
+    casyco(param)
+
+elif command == '--cflaco':
+    cflaco(param)
+
+elif command == '--cvarcoii':
+    cvarcoii(param)
+
+elif command == '--centropy':
+    centropy(param)
+elif command == '--convolution':
+    doConvolution(param)
+
+elif command == '--sexdetii':
+    doSExDetII(param)
+
+
+elif command == '--osobel':
+    doSobel(param)
+    
+elif command == '--benchmark':
+    doBenchmark(param)
