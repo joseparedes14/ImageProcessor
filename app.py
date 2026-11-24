@@ -790,6 +790,28 @@ def doHistogram(params):
 
 # -------- HISTOGRAM CALCULATION ALGORITHM --------- 
 # H1
+'''
+Una imagen oscura o de poco contraste usa solo una parte de los 256 grises, 
+y los detalles quedan "apretados". H1 reparte los grises para que usen todo 
+el rango de forma más uniforme. Así los detalles se separan y se ven mejor
+
+H1 deberían parecerse a las de una distribución uniforme:
+todos los niveles de gris tienen aproximadamente la misma cantidad de píxeles
+
+- Media: 127.5
+- Desviación típica: 73,9
+- Varianza : 5461
+- Asimetría : 0 porque está todo repartido por igual
+- Aplanamiento : -1.2, no hay pico central ni colas extremas
+- Entropia: 8 bits
+
+Buscamos ver que:
+- El contraste sube (+desv.tipica y varianza)
+- Asimetria se equilibria
+- Aplanamiento baja (histograma aplanado y repartido)
+- Entropia alta
+'''
+
 
 def doHUniform(params):
     histogram = doHistogram(params)
@@ -841,6 +863,7 @@ def doHUniform(params):
 # ---------- IMAGE CHARACTERISTICS ----------------
 # C1
 def cmean(params):
+    # Mide el brillo medio
     p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
@@ -848,6 +871,7 @@ def cmean(params):
     return mean
 
 def cvariance(params):
+    # Mide el contraste, si es baja, es bajo, ocn histrograma repartido por todo el rango
     p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
@@ -859,6 +883,7 @@ def cvariance(params):
 # C2
 
 def cstdev(params):
+    # Mide el contraste igual. Imagenes con bajo contraste son barras juntas en el centro
     p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
@@ -869,6 +894,13 @@ def cstdev(params):
 
 
 def cvarcoi(params):
+    '''
+    - Valor bajo (por ejemplo, <0,2): poca dispersión en relación con el brillo 
+    medio (o imagen muy brillante con contraste moderado)
+    
+    - Valor alto (por ejemplo,≥0,5–1): mucha dispersión respecto a la media 
+    (o imagen bastante oscura con variaciones notables de luz)
+    '''
     p = doHistogram(params)
     m = np.arange(L)
     mean = np.sum(m * p)
@@ -884,6 +916,13 @@ def cvarcoi(params):
 
 # C3
 def casyco(params):
+    '''
+    Mide hacia qué lado se estira la cola del histograma respecto a la media
+    - Cerca de 0: reparto bastante equilibrado a ambos lados de la media
+    - Positivo >0: cola hacia los valores altos / claros
+    - Negativo <0: cola hacia los valores bajos / oscuros
+    '''
+    
     p = doHistogram(params)
     m = np.arange(L)
 
@@ -900,6 +939,11 @@ def casyco(params):
 
 # C4
 def cflaco(params):
+    '''
+    Mide concentración en pico + colas frente a una campana gaussiana (0):
+    - Positivo (>0): más agudo/concentrado en un pico y con colas más pesadas
+    - Negativo (<0): más plano/repartido que una campana normal
+    '''
     p = doHistogram(params)
     m = np.arange(L)
 
@@ -916,6 +960,13 @@ def cflaco(params):
 
 # C5
 def cvarcoii(params):
+    '''
+    mínimo≈0,0039 máximo=1
+    Mide qué tan concentradas están las probabilidades en pocos niveles de gris
+    - Cerca de 1: histograma muy concentrado, todo de un solo gris 
+    - Cerca de 0,0039: píxeles están muy repartidos entre muchos niveles
+    '''
+    
     p = doHistogram(params)
     result = np.sum(p ** 2)
     print(f"Variation coefficient II: {result}")
@@ -924,6 +975,14 @@ def cvarcoii(params):
 
 #C6
 def centropy(params):
+    '''
+    Cuánto me sorprende el gris de un píxel que elijo al azar
+    - Baja: un gris domina, casi siempre aciertas
+    - Alta: todos los grises son parecidos en probabilidad, imagen variada. 
+    
+    - Imagen con 2 grises, 50 % y 50 % (0 y 255): entropía = 1 bit
+    - 256 grises, todos iguales: entropía = 8 bits
+    '''
     p = doHistogram(params)
     p = p[p > 0]
     result = -np.sum(p * np.log2(p))
@@ -935,6 +994,23 @@ def centropy(params):
 
 # ------ Implementation of linear image filtration algorithm in spatial domain basing on convolution --------
 # S4
+'''
+Este y la convolución sirven para dtectar cambios en una direccion concreta.
+
+Aquí ya no se mira el histograma, sino los vecinos de cada píxel. Cada 
+píxel se sustituye por una combinación de él y sus 8 vecinos, según una 
+máscara 3×3. Tu máscara S4 suma 0, así que en zonas lisas da 0 (negro) 
+y solo da valor donde el brillo cambia bruscamente, es decir, en los bordes 
+y detalles. Sirve para extraer detalles en una dirección concreta. 
+La versión optimizada hace lo mismo con menos operaciones.
+
+Cada máscara de S4_MASKS ('S', 'SW', 'W', 'NW') vale para resaltar cambios 
+de brillo o bordes orientados en esa dirección concreta dentro de la imagen.
+- 'S' (Sur / vertical arriba-abajo) : Resalta contrastes entre la zona superior y la inferior
+- 'SW' (Suroeste / diagonal): Resalta cambios orientados en diagonal hacia suroest
+- 'W' (Oeste / horizontal izquierda-derecha): Resalta contrastes entre la parte izquierda y la derecha
+- 'NW' (Noroeste / vertical opuesta a 'S'): Resalta el mismo tipo de contraste vertical que 'S', pero con el sentido opuesto de los peso
+'''
 
 
 S4_MASKS = {
@@ -954,6 +1030,16 @@ S4_MASKS = {
 
 
 # UNIVERSAL CONVOLUTION
+'''
+Recorres la imagen con una ventana 3x3 centrada en cada pixel y multiplicas cada vecino
+por el meso de la mascara (h). Cada mascara de S4_MASK suma 0, por lo que si 
+- todos los pixeles de la ventana tienen el mismo brillo, la suma se anula y queda en 0.
+- Donde hay un salto brusco de luz/oscuridad, los pesos positivos y negativos no se 
+compensan y sale un valor alto.
+
+Cada máscara está orientada para resaltar más los cambios en una dirección/orientación concreta
+'''
+
 def doConvolution(params):
     dic_param = parse_params(params)
     x = readimage(dic_param['input'])
@@ -977,7 +1063,12 @@ def doConvolution(params):
 
 
 # OPTIMIZED CONVOLUTION
+'''
+sirve para calcular más rápido la misma detección de bordes/detalles 
+que hace doConvolution con la máscara 'S'
 
+
+'''
 
 def doSExDetII(params):
     dic_param = parse_params(params)
@@ -989,6 +1080,7 @@ def doSExDetII(params):
     g[1:P-1, 1:Q-1] = rs[0:P-2] - rs[2:P] + rs[1:P-1] - 3 * x[1:P-1, 1:Q-1]
 
     result = np.clip(g, 0, L - 1).astype(np.uint8)
+    # np.clip limita los valores en ese intervalo, lo convertimos s uint8 para que sea entero es formato para iamgen de 8 bits
     saveimage(result, dic_param.get('output'))
     return result
 
@@ -996,6 +1088,19 @@ def doSExDetII(params):
 
 # -------- Implement non-linear image filtration algorithm in the spatial domain -------------
 # O3
+'''
+Una sola máscara direccional puede ver muy bien un borde horizontal y 
+apenas ver uno vertical o diagonal. Sobel resuelve eso combinando dos 
+direcciones.
+- X: mide cuánto cambia el brillo en horizontal
+- Y: mide cuánto cambia el brillo en vertical
+- los combina con √(X²+Y²),para obtener la magnitud o
+"fuerza" del borde en ese píxel, sin importar su orientación. 
+Se llama no lineal por esa raíz cuadrada de la suma de cuadrados. 
+
+Se usa como primer paso para segmentar o  reconocer objetos.
+'''
+
 
 def doSobel(params):
     dic_param = parse_params(params)
@@ -1036,7 +1141,7 @@ def doSobel(params):
 
 
 # --- Time ---
-
+# speedup (t_conv / t_opt) = cuántas veces más rápido va la versión optimizada.
 def doBenchmark(params):
     dic_param = parse_params(params)
     print("| Image (size) | doConvolution [s] | doSExDetII [s] | Speedup |")
